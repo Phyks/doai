@@ -1,0 +1,7 @@
+django
+requests
+unidecode
+psycopg
+unicode_tex
+lxml
+pyoai

@@ -1,0 +1,17 @@
+# python files
+*.pyc
+build/
+# vim 
+.*.swp
+# Localization
+*.mo
+# Virtualenv
+.virtualenv
+
+# build files for doc
+doc/sphinx/_build/
+doc/sphinx/*.migrations.*.rst
+
+# Coverage
+.coverage
+htmlcov/
