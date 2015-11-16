@@ -8,12 +8,20 @@ from oaipmh.metadata import MetadataRegistry, base_dc_reader
 from oaipmh.error import NoRecordsMatchError
 
 # Add text/bibliography MIME-TYPE
-mimerender._MIME_TYPES['json'] += ('text/bibliography',)
+mimerender._MIME_TYPES['bibtex'] = ('text/bibliography',)
 mimerender = mimerender.BottleMimeRender()
 
 
 def render_html(url):
     redirect(url)
+
+
+def render_bibtex(**args):
+    # TODO
+    return json.dumps(args,
+                      sort_keys=True,
+                      indent=4,
+                      separators=(',', ': '))
 
 
 def render_json(**args):
@@ -27,7 +35,7 @@ def render_json(**args):
 @mimerender(
     default='html',
     html=render_html,
-    # bibliography=render_json,
+    bibtex=render_bibtex,
     json=render_json
 )
 def doi(doi):
