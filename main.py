@@ -2,6 +2,7 @@
 import json
 import mimerender
 import settings
+import urllib
 from bottle import route, redirect, request, run
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, base_dc_reader
@@ -12,19 +13,37 @@ mimerender._MIME_TYPES['bibtex'] = ('text/bibliography',)
 mimerender = mimerender.BottleMimeRender()
 
 
-def render_html(url):
-    redirect(url)
+def doi2Bib(doi):
+    """
+    Returns a bibTeX string of metadata for a given DOI.
+
+    From : https://gist.github.com/jrsmith3/5513926
+    """
+    url = "http://dx.doi.org/" + doi
+    headers = {"accept": "application/x-bibtex"}
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        r = urllib.request.urlopen(req)
+
+        infos = dict((k.lower(), v) for k, v in dict(r.info()).items())
+        if infos['content-type'] == 'application/x-bibtex':
+            return r.read().decode('utf-8')
+        else:
+            return ''
+    except:
+        return ''
+
+
+def render_html(**args):
+    redirect(args["doi"])
 
 
 def render_bibtex(**args):
-    # TODO
-    return json.dumps(args,
-                      sort_keys=True,
-                      indent=4,
-                      separators=(',', ': '))
+    return doi2Bib(args["doi"])
 
 
 def render_json(**args):
+    args["bibtex"] = doi2Bib(args["doi"])
     return json.dumps(args,
                       sort_keys=True,
                       indent=4,
@@ -59,7 +78,10 @@ def doi(doi):
     doi_upstream_url = "https://dx.doi.org/%s?" % (doi,)
     for k, v in request.query.decode().items():
         doi_upstream_url += "%s=%s&" % (k, v)
-    return {"url": doi_upstream_url}
+    return {
+        "doi": doi,
+        "url": doi_upstream_url
+    }
 
 
 if __name__ == "__main__":
