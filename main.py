@@ -1,12 +1,35 @@
 #!/usr/bin/env python3
+import json
+import mimerender
 import settings
 from bottle import route, redirect, request, run
 from oaipmh.client import Client
 from oaipmh.metadata import MetadataRegistry, base_dc_reader
 from oaipmh.error import NoRecordsMatchError
 
+# Add text/bibliography MIME-TYPE
+mimerender._MIME_TYPES['json'] += ('text/bibliography',)
+mimerender = mimerender.BottleMimeRender()
+
+
+def render_html(url):
+    redirect(url)
+
+
+def render_json(**args):
+    return json.dumps(args,
+                      sort_keys=True,
+                      indent=4,
+                      separators=(',', ': '))
+
 
 @route("/<doi:path>")
+@mimerender(
+    default='html',
+    html=render_html,
+    # bibliography=render_json,
+    json=render_json
+)
 def doi(doi):
     # Try to fetch it from the registry
     registry = MetadataRegistry()
@@ -19,7 +42,7 @@ def doi(doi):
                 # If openaccess version available, redirect the user to it
                 has_oa = True in [i == "1" for i in record[1].getField("oa")]
                 if has_oa:
-                    redirect(record[1].getField("link")[0])
+                    return {"url": record[1].getField("link")[0]}
             except KeyError:
                 pass
     except NoRecordsMatchError:
@@ -28,7 +51,7 @@ def doi(doi):
     doi_upstream_url = "https://dx.doi.org/%s?" % (doi,)
     for k, v in request.query.decode().items():
         doi_upstream_url += "%s=%s&" % (k, v)
-    redirect(doi_upstream_url)
+    return {"url": doi_upstream_url}
 
 
 if __name__ == "__main__":
